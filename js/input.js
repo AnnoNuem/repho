@@ -35,6 +35,32 @@ function getMousePos(canvas, evt) {
 }
 
 
+document.getElementById('fi1').onchange = function (e) {
+    loadImage(
+    e.target.files[0],
+    function (img) {
+        i1Width = img.width;
+        i1Height = img.height;
+        img1 = img;
+        init();
+    },
+    );
+};
+
+document.getElementById('fi2').onchange = function (e) {
+    loadImage(
+    e.target.files[0],
+    function (img) {
+        i2Width = img.width;
+        i2Height = img.height;
+        
+        img2 = img;
+        init();
+    },
+    );
+};
+
+
 function mouse_action(event, clicked) {
     var mousePos = getMousePos(canvas, event);
 
@@ -83,4 +109,10 @@ function reset() {
     matPhase0 = mat3.create();
     matPhase1 = mat3.create();
     draw();
+}
+
+
+// save image 
+function saveImgCB() {
+    saveImg();
 }

@@ -23,10 +23,32 @@ var pointsTrans = [];
 var mat = mat3.create();
 var matPhase1 = mat3.create();
 var matPhase0 = mat3.create();
+var i1Height;
+var i1Width;
+var i2Height;
+var i2Width;
 
+
+
+function saveImg() {   
+    var MIME_TYPE = 'image/octet-stream';
+
+    var link1 = document.getElementById("link1");
+    var link2 = document.getElementById("link2");
+    link1.href = Canvas2Image.convertToImage(canvasImg1, canvasImg1.width, canvasImg1.height, "JPEG").src;
+    link2.href = Canvas2Image.convertToImage(canvasImg2, canvasImg2.width, canvasImg2.height, "JPEG").src;
+
+    link1.textContent = 'Download Image 1';
+    link2.textContent = 'Download Image 2';
+    link1.download = 'Image1.jpg';
+    link2.download = 'Image2.jpg';
+    link1.dataset.downloadurl = [MIME_TYPE, link1.download, link1.href].join(':');
+    link2.dataset.downloadurl = [MIME_TYPE, link2.download, link2.href].join(':');
+
+}
 
 function drawMagni(x, y) {
-    var img;
+//    var img;
     ctxMag.clearRect(0,0,img1.width, img1.height);
 
     if (points.length == 8) {
@@ -132,12 +154,11 @@ function draw() {
     drawPoints();
 }
     
-img2.onload = function() {
 
+function init () {
     // Resize images
     maxY = leftCWidth *
-        Math.max(img1.height/img1.width, img2.height/img2.width);
-
+        Math.max(i1Height/i1Width, i2Height/i2Width);
 
     img1.width = leftCWidth;
     img1.height = maxY;
@@ -160,6 +181,10 @@ img2.onload = function() {
         texture1 = canvasImg1.texture(img1);
         canvasImg2 = fx.canvas();
         texture2 = canvasImg2.texture(img2);
+        canvasImg1.width = leftCWidth;
+        canvasImg1.height = maxY;
+        canvasImg2.width = leftCWidth;
+        canvasImg2.height = maxY;
     } catch (e) {
         alert(e);
         return;
@@ -167,6 +192,19 @@ img2.onload = function() {
 
     reset();
 }
+
+
+img2.onload = function() {
+    i1Height = img1.height;
+    i1Width = img1.width;
+    i2Height = img2.height;
+    i2Width = img2.width;
+    
+    init();
+//    saveImg();
+};
+
+
 
 
 img1.src = img1Name;

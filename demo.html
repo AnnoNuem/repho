@@ -18,6 +18,12 @@
         <div id="rightC" style="float: right; width: 38%;">
             <canvas id="canvasMag" style="border:1px solid #d3d3d3;">
             </canvas>   
+
+            <p>Select new first image</p>
+            <p><input type="file" id="fi1"></p>
+            <p>Select new second image</p>
+            <p><input type="file" id="fi2"></p>
+
             <div class="slidecontainer">
                 <p>Alpha: <span id="alphaV"></span></p>
                 <input style="width: 80%;" type="range" min="0" max="1" value=".5" class="slider" 
@@ -30,13 +36,20 @@
             <div>
                 <button type="button" id="resetBtn" onclick="reset()">Reset</button>   
             </div>
+            <div id="savecontainer">
+                <p><button type="button" id="saveBtn" onclick="saveImgCB()">Create Download Links</button></p>
+                <p><a id=link1></a></p>
+                <p><a id=link2></a></p>
+            </div>
         </div>
 
         
 
-        <script src="./js/glfx.js"></script>
-        <script src="./js/gl-matrix.js"></script>
-        <script src="./js/numeric.js"></script>
+        <script src="./js/lib/glfx.js"></script>
+        <script src="./js/lib/gl-matrix.js"></script>
+        <script src="./js/lib/numeric.js"></script>
+        <script src="./js/lib/canvas2image.js"></script>
+        <script src="./js/lib/jsLoadImage/load-image.js"></script>
 
         <script src="./js/params.js"></script>
         <script src="./js/helpers.js"></script>
