@@ -1,0 +1,252 @@
+<!doctype html>
+
+<html>
+
+    <head>
+        <meta charset="utf-8">
+        <title>Re.Photos Demo</title>
+    </head>
+
+    <body>
+        <canvas id="canvas" style="border:1px solid #d3d3d3;" 
+            onmousedown="mouse_action(event, 1)" 
+            onmouseup="mouse_action(event, -1)"
+            onmousemove="mouse_action(event, 0)">
+        </canvas>
+        <div class="slidecontainer">
+            <p>Alpha: <span id="alphaV"></span></p>
+            <input type="range" min="0" max="1" value=".5" class="slider" 
+                   id="alphaRange" step=".01">
+            <p>Scale: <span id="scaleV"></span></p>
+            <input type="range" min="0.5" max="1.5" value="1" class="slider" 
+                   id="scaleRange" step=".01">
+        </div>
+        
+        <div>
+            <button type="button" id="resetBtn" onclick="reset()">Reset</button>   
+        </div>
+
+        <script>
+            // PARAMS
+            const maxX = 500;
+            const img1Name = "marien1.jpg";
+            const img2Name = "marien2.jpg";
+        </script>
+
+        <script src="./perspective.js"></script>
+
+        <script src="./gl-matrix.js"></script>
+
+        <script src="./numeric.js"></script>
+
+        <script>
+            var phase = 0;
+            var canvas = document.getElementById("canvas");
+            var aRange = document.getElementById("alphaRange"); 
+            var sRange = document.getElementById("scaleRange"); 
+            var image = new Image();
+            var image2 = new Image();
+
+            var cornerPoints = [];
+            // array of points selected by mouse; first entry: image 1, second
+            // entry: image 2, third entry: iamge 1, ...
+            var points = [];
+            var matPhase0 = mat2d.create();
+            var matPhase1 = mat2d.create();
+            var sMat = mat2d.create();
+
+            function applyMat (points, mat) {
+                var i = 0;
+                var pointsOut = [];
+                for (i = 0; i < cornerPoints.length; i++) {
+                    pointsOut.push(vec2.transformMat2d(vec2.create(), points[i], mat));
+                }
+                return pointsOut;
+            }
+
+
+            function draw() {
+                var ctx = canvas.getContext("2d");
+                var mat = mat2d.mul(mat2d.create(), matPhase0, matPhase1);
+                mat2d.mul(mat, sMat, mat);
+                var cP = applyMat(cornerPoints, mat);
+                console.log(cP);
+                console.log(cornerPoints);
+                console.log(mat);
+                var p = new Perspective(ctx, image);
+                p.draw([
+                        [cP[0][0], cP[0][1]],
+                        [cP[1][0], cP[1][1]],
+                        [cP[2][0], cP[2][1]],
+                        [cP[3][0], cP[3][1]]
+                ]);
+                ctx.globalAlpha= alpha;
+                ctx.drawImage(image2,0,0, canvas.width, canvas.height);
+                ctx.globalAlpha= 1;
+            }
+                
+            image2.onload = function() {
+                canvas.width = maxX;
+                canvas.height = canvas.width * 
+                    Math.max(image.height/image.width, image2.height/image2.width);
+                reset();
+            }
+
+            image.src = img1Name;
+            image2.src = img2Name;
+
+            // Alpha Slider
+            var alphaV = document.getElementById("alphaV");
+            var slider = document.getElementById("alphaRange");
+            alphaV.innerHTML = slider.value; 
+            var alpha = slider.value
+            slider.oninput = function() {
+                alphaV.innerHTML = this.value;
+                alpha = this.value;
+                draw();
+            }
+
+
+            // Scale Slider
+            var scaleV = document.getElementById("scaleV");
+            var sSlider = document.getElementById("scaleRange");
+            scaleV.innerHTML = sSlider.value; 
+            var scale = sSlider.value
+            sSlider.oninput = function() {
+                var scaleMat, tMat1, tMat2;
+                scaleV.innerHTML = this.value;
+                scale = this.value;
+
+                tMat1 = mat2d.fromTranslation(mat2d.create(),
+                    vec2.scale(vec2.create(), points[0], -1));
+                    //vec2.fromValues(-canvas.width/2, -canvas.height/2));
+                scaleMat = mat2d.fromScaling(mat2d.create(), vec2.fromValues(scale, scale));
+                tMat2 = mat2d.fromTranslation(mat2d.create(),
+                    points[0]);
+                    //vec2.fromValues(canvas.width/2, canvas.height/2));
+                    
+
+                sMat = mat2d.create();
+                mat2d.mul(sMat, tMat1, sMat);
+                mat2d.mul(sMat, scaleMat, sMat);
+                mat2d.mul(sMat, tMat2, sMat);
+
+                draw();
+            }
+
+            
+            // Phase 0: Translation
+            function phase0 () {
+                var diff;
+
+                diff = vec2.sub(vec2.create(), points[0], points[1]);
+                mat2d.fromTranslation(matPhase0, diff);
+
+                draw();
+            }
+
+
+            // Phase 1: Scaling and Rotation
+            function phase1 () {
+                var dist1, dist2, mat, tMat1, tMat2, sMat, mat;
+
+                mat = mat2d.create();
+
+                dist1 = vec2.dist(points[0], points[2]);
+                dist2 = vec2.dist(points[1], points[3]);
+
+                tMat1 = mat2d.fromTranslation(mat2d.create(),
+                            vec2.scale(vec2.create(), points[0], -1));
+
+                
+                sMat = mat2d.fromScaling(mat2d.create(), 
+                            vec2.fromValues(dist1/dist2, dist1/dist2));
+
+
+
+                tMat2 = mat2d.fromTranslation(mat2d.create(), points[0]);
+
+                mat2d.mul(mat, sMat, tMat1);
+                mat2d.mul(mat, tMat2, mat);
+                matPhase1 = mat2d.clone(mat);
+                console.log(vec2.transformMat2d(vec2.create(), points[0], mat));
+                console.log(vec2.transformMat2d(vec2.create(), points[1], mat));
+                console.log(points[1]);
+                console.log(points[0]);
+//                    
+//
+//                var iPoint0 = vec2.fromValues(-points[0][0] , -points[0][1]);
+//                var tMat1 = mat2d.create();
+//                tMat1 = mat2d.fromTranslation(tMat1, iPoint0);
+//
+//                var sVec = vec2.fromValues(dist1/dist2, dist1/dist2);
+//                var sMat = mat2d.create();
+//                mat2d.fromScaling(sMat, sVec);
+//
+//                var tMat2 = mat2d.create();
+//                mat2d.fromTranslation(tMat2, points[0]);
+//
+//                var rMat = mat2d.create();
+//                //var angle = vec2.angle(vec2.sub(vec2.create(), points[1], points[3]),
+//                //                       vec2.sub(vec2.create(), points[0], points[2]));
+//                var v1 = vec2.sub(vec2.create(), points[1], points[3]);
+//                var v2 = vec2.sub(vec2.create(), points[0], points[2]);
+//
+//                var angle = Math.atan2(v1[0] * v2[1] - v1[1] * v2[0],
+//                                        v1[0] * v2[0] - v1[1] * v2[1]);
+//                console.log(angle);
+//                mat2d.fromRotation(rMat, angle); 
+//                
+//
+//
+//
+//                mat2d.mul(mat, tMat1, mat);
+//                mat2d.mul(mat, rMat, mat);
+//                mat2d.mul(mat, sMat, mat);
+//                mat2d.mul(mat, tMat2, mat);
+//
+                draw();
+           } 
+                
+            
+            // mouse funcionality
+            var mouseDown = false;
+            var mousePosOld = null;
+            var mousePosStart = null;
+            function mouse_action(event, clicked) {
+                var mousePos = vec2.fromValues(event.clientX, event.clientY);
+
+                if (clicked == 1) {
+                    mouseDown = true;
+                    mousePosOld = vec2.fromValues(event.clientX, event.clientY);
+                    mousePosStart = vec2.fromValues(event.clientX, event.clientY);
+                    points.push(mousePos);
+                    if (points.length == 2) {
+                        phase0();
+                    } else if (points.length == 4) {
+                        phase1();
+                    }
+                } else if ( clicked == -1) {
+                    mouseDown = false;
+                }
+            }
+
+
+            // resset 
+            function reset() {
+                cornerPoints = [];
+                points = [];
+                cornerPoints.push(vec2.fromValues(0,0));
+                cornerPoints.push(vec2.fromValues(canvas.width,0));
+                cornerPoints.push(vec2.fromValues(canvas.width,canvas.height));
+                cornerPoints.push(vec2.fromValues(0,canvas.height));
+                draw();
+            }
+                
+
+
+
+        </script>
+    </body>
+
+</html>
